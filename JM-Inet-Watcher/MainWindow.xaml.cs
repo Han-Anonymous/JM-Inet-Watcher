@@ -58,9 +58,12 @@ namespace JM_Inet_Watcher
                 Visible = true,
                 Text = "INetClockTool Watcher"
             };
-            _notifyIcon.DoubleClick += (s, e) => RestoreFromTray();
+            _notifyIcon.DoubleClick += NotifyIcon_DoubleClick;
             var menu = new ContextMenuStrip();
-            menu.Items.Add("Show", null, (s, e) => RestoreFromTray());
+            menu.Items.Add("Show", null, (s, e) => 
+            {
+                Dispatcher.BeginInvoke(new Action(() => RestoreFromTray()));
+            });
             menu.Items.Add("Exit", null, (s, e) => ExitApp());
             _notifyIcon.ContextMenuStrip = menu;
         }
@@ -75,9 +78,10 @@ namespace JM_Inet_Watcher
         private void RestoreFromTray()
         {
             Show();
-            WindowState = WindowState.Maximized;
+            WindowState = WindowState.Normal;
             ShowInTaskbar = true;
             Activate();
+            Focus();
         }
 
         private void ExitApp()
@@ -125,18 +129,108 @@ namespace JM_Inet_Watcher
             CheckAndUpdateServiceStatus();
         }
 
+        private void MainGrid_Loaded(object sender, RoutedEventArgs e)
+        {
+            var pageLoadAnimation = (Storyboard)FindResource("PageLoadAnimation");
+            pageLoadAnimation.Begin(MainGrid);
+        }
+
+        private void MinimizeButton_Click(object sender, RoutedEventArgs e)
+        {
+            WindowState = WindowState.Minimized;
+        }
+
+        private void CloseButton_Click(object sender, RoutedEventArgs e)
+        {
+            ExitApp();
+        }
+
         private void ServiceStatusLabel_Loaded(object sender, RoutedEventArgs e)
         {
-            var fadeIn = (Storyboard)FindResource("FadeInStatus");
-            fadeIn.Begin(ServiceStatusLabel);
+            var statusAnimation = (Storyboard)FindResource("StatusChangeAnimation");
+            statusAnimation.Begin(ServiceStatusLabel);
         }
 
         private void UpdateStatusLabelWithAnimation(string statusText)
         {
             ServiceStatusLabel.Opacity = 0;
             ServiceStatusLabel.Text = statusText;
-            var fadeIn = (Storyboard)FindResource("FadeInStatus");
-            fadeIn.Begin(ServiceStatusLabel);
+            
+            // Update status indicator color and start pulse animation
+            UpdateStatusIndicator(statusText);
+            
+            var statusAnimation = (Storyboard)FindResource("StatusChangeAnimation");
+            statusAnimation.Begin(ServiceStatusLabel);
+        }
+
+        private void NotifyIcon_DoubleClick(object sender, EventArgs e)
+        {
+            // Use Dispatcher to ensure UI thread execution
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                try
+                {
+                    // Force show and restore
+                    if (!IsVisible || WindowState == WindowState.Minimized)
+                    {
+                        Show();
+                        WindowState = WindowState.Normal;
+                        ShowInTaskbar = true;
+                    }
+                    
+                    // Bring to front with multiple methods
+                    Activate();
+                    Focus();
+                    
+                    // Force to top temporarily
+                    bool wasTopmost = Topmost;
+                    Topmost = true;
+                    Topmost = wasTopmost;
+                    
+                    // Additional focus methods
+                    BringIntoView();
+                }
+                catch (Exception ex)
+                {
+                    // Log error if needed
+                    System.Diagnostics.Debug.WriteLine($"NotifyIcon restore error: {ex.Message}");
+                }
+            }));
+        }
+
+        private void UpdateStatusIndicator(string statusText)
+        {
+            var statusIndicator = FindName("StatusIndicator") as Border;
+            var statusDot = FindName("StatusDot") as Ellipse;
+            var pulseAnimation = (Storyboard)FindResource("PulseAnimation");
+            
+            if (statusIndicator != null && statusDot != null)
+            {
+                pulseAnimation.Stop(statusIndicator);
+                
+                if (statusText.Contains("Running"))
+                {
+                    var successBrush = (SolidColorBrush)FindResource("SuccessBrush");
+                    statusIndicator.Background = successBrush;
+                    statusDot.Fill = successBrush;
+                    ServiceStatusLabel.Style = (Style)FindResource("StatusRunningStyle");
+                    pulseAnimation.Begin(statusIndicator, true);
+                }
+                else if (statusText.Contains("Stopped"))
+                {
+                    var errorBrush = (SolidColorBrush)FindResource("ErrorBrush");
+                    statusIndicator.Background = errorBrush;
+                    statusDot.Fill = errorBrush;
+                    ServiceStatusLabel.Style = (Style)FindResource("StatusStoppedStyle");
+                }
+                else
+                {
+                    var warningBrush = (SolidColorBrush)FindResource("WarningBrush");
+                    statusIndicator.Background = warningBrush;
+                    statusDot.Fill = warningBrush;
+                    ServiceStatusLabel.Style = (Style)FindResource("StatusUnknownStyle");
+                }
+            }
         }
 
         private void CheckAndUpdateServiceStatus()

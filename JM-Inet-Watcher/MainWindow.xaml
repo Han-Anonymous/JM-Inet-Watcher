@@ -5,89 +5,336 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:JM_Inet_Watcher"
         mc:Ignorable="d"
-        Title="Jakel INetClockTool Watcher" Height="450" Width="800" Background="#23272F" 
+        Title="INetClockTool Service Monitor" 
+        Height="600" Width="900" 
+        MinHeight="500" MinWidth="700"
+        Background="{StaticResource PrimaryBackgroundBrush}" 
+        WindowStyle="None"
+        AllowsTransparency="True"
+        ResizeMode="CanResize"
+        WindowStartupLocation="CenterScreen"
         Icon="/icons8-clock-80.ico">
+    
     <Window.Resources>
-        <!-- Button Style with Hover Contrast and Icon Support -->
-        <Style x:Key="RichButtonStyle" TargetType="Button">
-            <Setter Property="FontFamily" Value="Segoe UI"/>
-            <Setter Property="FontSize" Value="18"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Padding" Value="10,0"/>
-            <Setter Property="Margin" Value="0,0,15,0"/>
-            <Setter Property="Background" Value="#238636"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8" SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#2EA043"/>
-                                <Setter Property="Effect">
-                                    <Setter.Value>
-                                        <DropShadowEffect Color="#000000" BlurRadius="10" ShadowDepth="2"/>
-                                    </Setter.Value>
-                                </Setter>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#196C2E"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <Style x:Key="RefreshButtonStyle" TargetType="Button" BasedOn="{StaticResource RichButtonStyle}">
-            <Setter Property="Background" Value="#0969DA"/>
-            <Setter Property="Margin" Value="0"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#218BFF"/>
-                </Trigger>
-                <Trigger Property="IsPressed" Value="True">
-                    <Setter Property="Background" Value="#054A91"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-        <!-- Fade-in Animation for Status Label -->
-        <Storyboard x:Key="FadeInStatus">
-            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:1"/>
+        <!-- Enhanced Status Change Animation -->
+        <Storyboard x:Key="StatusChangeAnimation">
+            <DoubleAnimation Storyboard.TargetProperty="Opacity" 
+                           From="0" To="1" 
+                           Duration="0:0:0.5">
+                <DoubleAnimation.EasingFunction>
+                    <PowerEase EasingMode="EaseOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" 
+                           From="0.9" To="1" 
+                           Duration="0:0:0.5">
+                <DoubleAnimation.EasingFunction>
+                    <BackEase EasingMode="EaseOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" 
+                           From="0.9" To="1" 
+                           Duration="0:0:0.5">
+                <DoubleAnimation.EasingFunction>
+                    <BackEase EasingMode="EaseOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
+
+        <!-- Page Load Animation -->
+        <Storyboard x:Key="PageLoadAnimation">
+            <DoubleAnimation Storyboard.TargetProperty="Opacity" 
+                           From="0" To="1" 
+                           Duration="0:0:0.8">
+                <DoubleAnimation.EasingFunction>
+                    <PowerEase EasingMode="EaseOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" 
+                           From="30" To="0" 
+                           Duration="0:0:0.8">
+                <DoubleAnimation.EasingFunction>
+                    <PowerEase EasingMode="EaseOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
+
+        <!-- Pulse Animation for Status Indicator -->
+        <Storyboard x:Key="PulseAnimation" RepeatBehavior="Forever">
+            <DoubleAnimation Storyboard.TargetProperty="Opacity" 
+                           From="1" To="0.6" 
+                           Duration="0:0:1"
+                           AutoReverse="True">
+                <DoubleAnimation.EasingFunction>
+                    <SineEase EasingMode="EaseInOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
         </Storyboard>
     </Window.Resources>
-    <Grid>
-        <Border CornerRadius="20" Background="#2D333B" Padding="30" Margin="40">
-            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,10">
-                    <TextBlock Text="🕒" FontSize="36" Margin="0,0,10,0" Foreground="#FFFFB458"/>
-                    <TextBlock Text="INetClockTool Service Status" FontSize="32" FontWeight="Bold" Foreground="#F0F6FC" VerticalAlignment="Center"/>
+
+    <!-- Custom Window Chrome -->
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="32" 
+                      CornerRadius="12" 
+                      GlassFrameThickness="0" 
+                      NonClientFrameEdges="None" 
+                      ResizeBorderThickness="8" 
+                      UseAeroCaptionButtons="False"/>
+    </WindowChrome.WindowChrome>
+
+    <Grid x:Name="MainGrid" 
+          Loaded="MainGrid_Loaded">
+        <Grid.RenderTransform>
+            <TransformGroup>
+                <TranslateTransform Y="30"/>
+            </TransformGroup>
+        </Grid.RenderTransform>
+
+        <!-- Window Background with Gradient -->
+        <Border Background="{StaticResource PrimaryBackgroundBrush}" 
+                CornerRadius="12"/>
+
+        <!-- Custom Title Bar -->
+        <Border Height="32" 
+                VerticalAlignment="Top" 
+                Background="{StaticResource SecondaryBackgroundBrush}" 
+                CornerRadius="12,12,0,0"
+                WindowChrome.IsHitTestVisibleInChrome="True">
+            <Grid>
+                <StackPanel Orientation="Horizontal" 
+                           HorizontalAlignment="Left" 
+                           VerticalAlignment="Center" 
+                           Margin="16,0">
+                    <Path Data="{StaticResource ClockIconGeometry}" 
+                          Style="{StaticResource AccentIconStyle}" 
+                          Width="14" Height="14" 
+                          Margin="0,0,8,0"
+                          VerticalAlignment="Center"/>
+                    <TextBlock Text="INetClockTool Service Monitor" 
+                              Style="{StaticResource BodyTextStyle}" 
+                              VerticalAlignment="Center"/>
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,10">
-                    <TextBlock Text="🔔" FontSize="28" Margin="0,0,8,0" Foreground="#FFD700"/>
-                    <TextBlock x:Name="ServiceStatusLabel" Text="Unknown" FontSize="28" FontWeight="SemiBold" Foreground="#58A6FF" Opacity="0" Loaded="ServiceStatusLabel_Loaded"/>
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,20">
-                    <TextBlock Text="⏰" FontSize="18" Margin="0,0,6,0" Foreground="#FF6F61"/>
-                    <TextBlock x:Name="LastCheckedLabel" Text="Last Checked: Never" FontSize="18" Foreground="#ADBAC7"/>
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                    <Button x:Name="StartServiceButton" Style="{StaticResource RichButtonStyle}" Width="170" Height="40" Click="StartServiceButton_Click">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                            <TextBlock Text="▶️" FontSize="20" Margin="0,0,6,0"/>
-                            <TextBlock Text="Start Service"/>
-                        </StackPanel>
+                
+                <!-- Window Controls -->
+                <StackPanel Orientation="Horizontal" 
+                           HorizontalAlignment="Right" 
+                           VerticalAlignment="Center">
+                    <Button x:Name="MinimizeButton" 
+                           Style="{StaticResource SecondaryButtonStyle}" 
+                           Width="32" Height="24" 
+                           Margin="0,0,4,0" 
+                           Padding="0"
+                           Click="MinimizeButton_Click"
+                           WindowChrome.IsHitTestVisibleInChrome="True">
+                        <TextBlock Text="−" FontSize="14" FontWeight="Bold"/>
                     </Button>
-                    <Button x:Name="RefreshButton" Style="{StaticResource RefreshButtonStyle}" Width="170" Height="40" Click="RefreshButton_Click">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                            <TextBlock Text="🔄" FontSize="20" Margin="0,0,6,0"/>
-                            <TextBlock Text="Refresh Now"/>
-                        </StackPanel>
+                    <Button x:Name="CloseButton" 
+                           Style="{StaticResource SecondaryButtonStyle}" 
+                           Width="32" Height="24" 
+                           Margin="0,0,8,0" 
+                           Padding="0"
+                           Click="CloseButton_Click"
+                           WindowChrome.IsHitTestVisibleInChrome="True">
+                        <TextBlock Text="×" FontSize="16" FontWeight="Bold"/>
                     </Button>
                 </StackPanel>
-            </StackPanel>
+            </Grid>
         </Border>
+
+        <!-- Main Content Area -->
+        <Grid Margin="0,32,0,0">
+            <!-- Background Glow Effect -->
+            <Ellipse Width="400" Height="400" 
+                     Fill="{StaticResource GlowBrush}" 
+                     Opacity="0.1" 
+                     HorizontalAlignment="Center" 
+                     VerticalAlignment="Center"/>
+
+            <!-- Main Content Card -->
+            <Border x:Name="ContentCard" 
+                    Style="{StaticResource AcrylicCardStyle}" 
+                    MaxWidth="600" 
+                    HorizontalAlignment="Center" 
+                    VerticalAlignment="Center" 
+                    Margin="40">
+                
+                <StackPanel HorizontalAlignment="Center" 
+                           VerticalAlignment="Center" 
+                           Margin="0,12,0,0">
+                    
+                    <!-- Header Section -->
+                    <StackPanel HorizontalAlignment="Center" Margin="0,0,0,16">
+                        <!-- Main Title -->
+                        <StackPanel Orientation="Horizontal" 
+                                   HorizontalAlignment="Center" 
+                                   Margin="0,0,0,12">
+                            <Border Background="{StaticResource AccentPrimaryBrush}" 
+                                   CornerRadius="12" 
+                                   Padding="12">
+                                <Path Data="{StaticResource ClockIconGeometry}" 
+                                     Fill="White" 
+                                     Width="28" Height="28"
+                                     Stretch="Uniform"
+                                     VerticalAlignment="Center"
+                                     HorizontalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="Service Monitor" 
+                                      Style="{StaticResource Heading1TextStyle}" 
+                                      VerticalAlignment="Center"
+                                      Margin="12,0,0,0"/>
+                        </StackPanel>
+
+                        <!-- Subtitle -->
+                        <TextBlock Text="INetClockTool Service Status" 
+                                  Style="{StaticResource BodyLargeTextStyle}" 
+                                  Foreground="{StaticResource TextSecondaryBrush}" 
+                                  HorizontalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Status Section -->
+                    <Border Background="{StaticResource SurfaceBrush}" 
+                           BorderBrush="{StaticResource BorderBrush}" 
+                           BorderThickness="1" 
+                           CornerRadius="8" 
+                           Padding="24,16">
+                        <StackPanel Margin="0,0,0,12">
+                            <!-- Status Indicator -->
+                            <StackPanel Orientation="Horizontal" 
+                                       HorizontalAlignment="Center" 
+                                       Margin="0,0,0,12">
+                                <Border x:Name="StatusIndicator" 
+                                       Background="{StaticResource WarningBrush}" 
+                                       CornerRadius="8" 
+                                       Width="16" Height="16" 
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Center">
+                                    <Ellipse x:Name="StatusDot"
+                                            Fill="{StaticResource WarningBrush}" 
+                                            Width="8" Height="8"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock x:Name="ServiceStatusLabel" 
+                                          Text="Unknown" 
+                                          Style="{StaticResource Heading2TextStyle}" 
+                                          Opacity="0"
+                                          RenderTransform="{x:Static ScaleTransform.Identity}"
+                                          RenderTransformOrigin="0.5,0.5"
+                                          Loaded="ServiceStatusLabel_Loaded"
+                                          Margin="12,0,0,0"/>
+                            </StackPanel>
+
+                            <!-- Last Checked -->
+                            <StackPanel Orientation="Horizontal" 
+                                       HorizontalAlignment="Center" 
+                                       Margin="0,0,0,8">
+                                <Path Data="{StaticResource StatusIconGeometry}" 
+                                     Fill="{StaticResource TextTertiaryBrush}" 
+                                     Width="12" Height="12"
+                                     Stretch="Uniform"
+                                     VerticalAlignment="Center"
+                                     HorizontalAlignment="Center"
+                                     UseLayoutRounding="True"
+                                     SnapsToDevicePixels="True"/>
+                                <TextBlock x:Name="LastCheckedLabel" 
+                                          Text="Last Checked: Never" 
+                                          Style="{StaticResource BodyTextStyle}"
+                                          Margin="8,0,0,0"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Action Buttons -->
+                    <StackPanel Orientation="Horizontal" 
+                               HorizontalAlignment="Center" 
+                               Margin="0,16,0,0">
+                        <Button x:Name="StartServiceButton" 
+                               Style="{StaticResource SuccessButtonStyle}" 
+                               MinWidth="140" Height="44" 
+                               Click="StartServiceButton_Click"
+                               Margin="0,0,8,0">
+                            <StackPanel Orientation="Horizontal" 
+                                       HorizontalAlignment="Center" 
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,8,0">
+                                <Path Data="{StaticResource PlayIconGeometry}" 
+                                     Fill="White" 
+                                     Width="14" Height="14"
+                                     Stretch="Uniform"
+                                     VerticalAlignment="Center"
+                                     HorizontalAlignment="Center"
+                                     UseLayoutRounding="True"
+                                     SnapsToDevicePixels="True"/>
+                                <TextBlock Text="Start Service" 
+                                          Style="{StaticResource BodyLargeTextStyle}" 
+                                          Foreground="White"
+                                          Margin="8,0,0,0"
+                                          VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        
+                        <Button x:Name="RefreshButton" 
+                               Style="{StaticResource PrimaryButtonStyle}" 
+                               MinWidth="140" Height="44" 
+                               Click="RefreshButton_Click">
+                            <StackPanel Orientation="Horizontal" 
+                                       HorizontalAlignment="Center" 
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,8,0">
+                                <Path Data="{StaticResource RefreshIconGeometry}" 
+                                     Fill="White" 
+                                     Width="14" Height="14"
+                                     Stretch="Uniform"
+                                     VerticalAlignment="Center"
+                                     HorizontalAlignment="Center"
+                                     UseLayoutRounding="True"
+                                     SnapsToDevicePixels="True"/>
+                                <TextBlock Text="Refresh Status" 
+                                          Style="{StaticResource BodyLargeTextStyle}" 
+                                          Foreground="White"
+                                          Margin="8,0,0,0"
+                                          VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+
+                    <!-- Author Credit -->
+                    <Border Background="{StaticResource SurfaceBrush}" 
+                           BorderBrush="{StaticResource BorderBrush}" 
+                           BorderThickness="1" 
+                           CornerRadius="6" 
+                           Padding="12,8"
+                           Margin="0,16,0,0"
+                           HorizontalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" 
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center">
+                            <Border Background="{StaticResource AccentPrimaryBrush}" 
+                                   CornerRadius="3" 
+                                   Padding="4,2"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,6,0">
+                                <Path Data="{StaticResource StatusIconGeometry}" 
+                                     Fill="White" 
+                                     Width="10" Height="10"
+                                     Stretch="Uniform"
+                                     VerticalAlignment="Center"
+                                     HorizontalAlignment="Center"
+                                     UseLayoutRounding="True"
+                                     SnapsToDevicePixels="True"/>
+                            </Border>
+                            <TextBlock Text="Authored by: " 
+                                      Style="{StaticResource CaptionTextStyle}" 
+                                      VerticalAlignment="Center"/>
+                            <TextBlock Text="Hanzalah Adalan" 
+                                      Style="{StaticResource CaptionTextStyle}" 
+                                      Foreground="{StaticResource AccentPrimaryBrush}"
+                                      FontWeight="Medium"
+                                      VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+        </Grid>
     </Grid>
 </Window>
